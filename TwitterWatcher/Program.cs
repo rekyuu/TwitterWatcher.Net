@@ -22,6 +22,9 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
+    // Add health check
+    builder.Services.AddHealthChecks();
+    
     // Add PostgreSQL
     builder.Services.AddDbContext<DatabaseContext>(options => { options.UseNpgsql(Config.PsqlConnectionString); });
     
@@ -60,6 +63,7 @@ try
     }
 
     app.MapControllers();
+    app.MapHealthChecks("/health");
 
     app.Run();
 }

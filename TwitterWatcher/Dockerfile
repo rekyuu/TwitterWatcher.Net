@@ -2,6 +2,8 @@
 WORKDIR /app
 EXPOSE 80
 
+RUN apt-get update -y && apt-get install curl -y
+
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["TwitterWatcher/TwitterWatcher.csproj", "TwitterWatcher/"]
@@ -14,3 +16,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "TwitterWatcher.dll"]
+HEALTHCHECK CMD curl --fail http://localhost/health || exit
