@@ -9,6 +9,8 @@ public static class Config
     
     static Config()
     {
+        Secrets = new Secrets();
+        
         if (File.Exists("Secrets.json"))
         {
             string secrets = File.ReadAllText("Secrets.json");
