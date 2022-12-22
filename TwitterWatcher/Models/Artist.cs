@@ -39,6 +39,7 @@ public class Artist
     {
         try
         {
+            MediaTweets = Array.Empty<ArtistMediaTweet>();
             LastProcessedTime = DateTimeOffset.UtcNow;
             
             TwitterUserTimeline timeline = await TwitterUtility.GetUserTimeline(TwitterId, LastProcessedTweetId);
