@@ -61,7 +61,7 @@ public class WatcherService : IHostedService, IDisposable
                 _logger.LogInformation("Processing {Artist}...", artist.Username);
                 
                 TwitterUser user = await TwitterUtility.GetUserById(artist.TwitterId);
-                if (user.Data.Username != artist.Username)
+                if (user != null && user.Data.Username != artist.Username)
                 {
                     _logger.LogInformation("{Artist}'s username has changed to {NewUsername}", artist.Username, user.Data.Username);
                     

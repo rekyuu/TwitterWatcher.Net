@@ -12,9 +12,10 @@ public static class HttpUtility
 
     private const string _twitterBaseUri = "https://api.twitter.com";
     private static TwitterToken _twitterToken;
+    private static readonly Dictionary<TwitterEndpointType, DateTimeOffset?> _twitterRateLimitResetDates = new();
 
     private const string _telegramBaseUri = "https://api.telegram.org";
-    private const int _telegramTimeBetweenMessages = 1000;
+    private const int _telegramTimeBetweenMessagesMs = 1000;
     private static readonly object _telegramLockObj = new();
 
     public static void TelegramPostRequest(string endpoint, Dictionary<string, string> urlParams = default)
@@ -32,21 +33,38 @@ public static class HttpUtility
             string content = Task.Run(async () => await response.Content.ReadAsStringAsync()).Result;
             Log.Debug("Received response from Telegram: {Content}", content);
 
-            Thread.Sleep(_telegramTimeBetweenMessages);
+            Thread.Sleep(_telegramTimeBetweenMessagesMs);
         }
     }
     
-    public static async Task<T> TwitterGetRequest<T>(string endpoint, Dictionary<string, string> urlParams = default) where T : TwitterResponse
+    public static async Task<T> TwitterGetRequest<T>(string endpoint, TwitterEndpointType endpointType, Dictionary<string, string> urlParams = default) where T : TwitterResponse
     {
-        if (_twitterToken == null) _twitterToken = await GetTwitterBearerToken();
+        _twitterRateLimitResetDates.TryGetValue(endpointType, out DateTimeOffset? rateLimitDate);
         
+        if (rateLimitDate.HasValue && rateLimitDate > DateTimeOffset.UtcNow)
+        {
+            Log.Warning("Twitter rate limit for {EndpointType} reached until {ResetDate}, skipping this iteration", endpointType, _twitterRateLimitResetDates[endpointType]);
+            return default;
+        }
+        
+        _twitterToken ??= await GetTwitterBearerToken();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _twitterToken.AccessToken);
 
         string uri = QueryHelpers.AddQueryString($"{_twitterBaseUri}{endpoint}", urlParams ?? new Dictionary<string, string>());
         
         HttpRequestMessage request = new(HttpMethod.Get, uri);
         HttpResponseMessage response = await _client.SendAsync(request);
-        
+
+        if (response.Headers.Contains("x-rate-limit-remaining") && response.Headers.Contains("x-rate-limit-reset"))
+        {
+            int rateLimitRemaining = int.Parse(response.Headers.GetValues("x-rate-limit-remaining").First());
+            if (rateLimitRemaining <= 0)
+            {
+                int reset = int.Parse(response.Headers.GetValues("x-rate-limit-reset").First());
+                _twitterRateLimitResetDates[endpointType] = DateTimeOffset.FromUnixTimeSeconds(reset);
+            }
+        }
+
         string content = Task.Run(async () => await response.Content.ReadAsStringAsync()).Result;
         Log.Debug("Received response from Twitter: {Content}", content);
 
@@ -83,4 +101,10 @@ public static class HttpUtility
         HttpResponseMessage response = await _client.SendAsync(request);
         return await response.Content.ReadFromJsonAsync<TwitterToken>();
     }
+}
+
+public enum TwitterEndpointType
+{
+    UserLookup,
+    UserTweetTimeline
 }

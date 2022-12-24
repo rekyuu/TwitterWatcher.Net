@@ -8,12 +8,12 @@ public static class TwitterUtility
 {
     public static async Task<TwitterUser> GetUserByUsername(string username)
     {
-        return await HttpUtility.TwitterGetRequest<TwitterUser>($"/2/users/by/username/{username}");
+        return await HttpUtility.TwitterGetRequest<TwitterUser>($"/2/users/by/username/{username}", TwitterEndpointType.UserLookup);
     }
     
     public static async Task<TwitterUser> GetUserById(string id)
     {
-        return await HttpUtility.TwitterGetRequest<TwitterUser>($"/2/users/{id}");
+        return await HttpUtility.TwitterGetRequest<TwitterUser>($"/2/users/{id}", TwitterEndpointType.UserLookup);
     }
 
     public static async Task<TwitterUserTimeline> GetUserTimeline(string twitterId, string sinceId = "")
@@ -29,7 +29,9 @@ public static class TwitterUtility
         
         if (!string.IsNullOrEmpty(sinceId)) urlParams.Add("since_id", sinceId);
         
-        TwitterUserTimeline timeline = await HttpUtility.TwitterGetRequest<TwitterUserTimeline>($"/2/users/{twitterId}/tweets", urlParams);
+        TwitterUserTimeline timeline = await HttpUtility.TwitterGetRequest<TwitterUserTimeline>($"/2/users/{twitterId}/tweets", TwitterEndpointType.UserTweetTimeline, urlParams);
+
+        timeline ??= new TwitterUserTimeline();
         timeline.Data = timeline.Data?.OrderBy(x => x.CreatedAt).ToArray();
         
         return timeline;
