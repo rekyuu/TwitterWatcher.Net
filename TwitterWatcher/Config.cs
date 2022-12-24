@@ -17,6 +17,8 @@ public static class Config
             Secrets = JsonSerializer.Deserialize<Secrets>(secrets);
         }
     }
+
+    public static int WatcherCadenceMinutes => int.Parse(Environment.GetEnvironmentVariable("WATCHER_CADENCE_MINUTES") ?? "10");
     
     public static string PsqlConnectionString => $"Host={Secrets.PsqlHost};Database={Secrets.PsqlDb};Username={Secrets.PsqlUsername};Password={Secrets.PsqlPassword}";
 }

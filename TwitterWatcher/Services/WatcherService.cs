@@ -22,7 +22,7 @@ public class WatcherService : IHostedService, IDisposable
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting watcher loop");
-        _timer = new Timer(StartWatcher, null, TimeSpan.Zero, TimeSpan.FromMinutes(10));
+        _timer = new Timer(StartWatcher, null, TimeSpan.Zero, TimeSpan.FromMinutes(Config.WatcherCadenceMinutes));
 
         return Task.CompletedTask;
     }
