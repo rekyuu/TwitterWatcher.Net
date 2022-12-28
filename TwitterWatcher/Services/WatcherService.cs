@@ -47,7 +47,9 @@ public class WatcherService : IHostedService, IDisposable
 
     private async Task Watch()
     {
-        Artist[] artists = _db.Artists.Where(x => x.IsActive).ToArray();
+        Artist[] artists = _db.Artists
+            // .Where(x => x.IsActive)
+            .ToArray();
         
         _logger.LogInformation("Processing {Count} artists", artists.Length);
 
@@ -89,6 +91,7 @@ public class WatcherService : IHostedService, IDisposable
                     else SendMultipleFiles(user, tweet);
                 }
 
+                if (!artist.IsActive) artist.IsActive = true;
                 successful++;
             }
             catch (Exception ex)
@@ -96,7 +99,7 @@ public class WatcherService : IHostedService, IDisposable
                 _logger.LogError(ex, "An exception was thrown while processing {Artist} and the user will be deactivated", artist.Username);
                 TelegramUtility.SendMessage($"There was an issue processing https://twitter.com/{artist.Username}.");
                 
-                artist.IsActive = false;
+                if (artist.IsActive) artist.IsActive = false;
                 failed++;
             }
         }
